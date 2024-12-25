@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Stock Checker</title>
+	</head>
+	<body>
+		<h1>Stock Checker</h1>
+		<form id="stock-form">
+			<label for="symbol">Enter Stock Symbol:</label>
+			<input type="text" id="symbol" name="symbol" required />
+			<button type="submit">Search</button>
+		</form>
+		<hr />
+		<div id="result">
+			<h2 id="stock-name"></h2>
+			<p id="current-price"></p>
+			<p id="trend"></p>
+			<img id="stock-graph" alt="Stock Graph" />
+		</div>
+
+		<script>
+			const form = document.getElementById('stock-form');
+			form.addEventListener('submit', async (event) => {
+				event.preventDefault();
+				const symbol = document.getElementById('symbol').value;
+				const resultDiv = document.getElementById('result');
+
+				resultDiv.innerHTML = 'Loading...';
+				try {
+					// Fetch stock data
+					const stockResponse = await fetch(`/stock?symbol=${symbol}`);
+					if (!stockResponse.ok) throw new Error('Failed to fetch stock data');
+					const stockData = await stockResponse.json();
+
+					// Fetch stock graph
+					const graphResponse = await fetch(`/graph?symbol=${symbol}`);
+					if (!graphResponse.ok)
+						throw new Error('Failed to generate stock graph');
+					const graphData = await graphResponse.json();
+
+					// Display results
+					resultDiv.innerHTML = `
+                    <h2>${stockData.symbol}</h2>
+                    <p>Current Price: $${stockData.current_price}</p>
+                    <p>Change: $${stockData.change} (${stockData.percent_change}%)</p>
+                    <img src="${graphData.graph}" alt="Stock Graph">
+                `;
+				} catch (error) {
+					resultDiv.innerHTML = `<p>${error.message}</p>`;
+				}
+			});
+		</script>
+	</body>
+</html>
