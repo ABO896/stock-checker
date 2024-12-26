@@ -1,91 +1,84 @@
-import matplotlib
-matplotlib.use('Agg')  # Use non-GUI backend for server rendering
-import matplotlib.pyplot as plt
 from flask import Flask, request, jsonify, render_template
 import requests
-import io
-import base64
 from flask_cors import CORS
-import datetime
+import os
 
 app = Flask(__name__)
-CORS(app)
+CORS(app)  # Enable CORS for all routes
 
-API_KEY = "your_api_key"  # Replace with your API key
-BASE_URL = "https://finnhub.io/api/v1"
+# Load API Key from environment variables for better security
+API_KEY = os.getenv("FINNHUB_API_KEY", "ctm58v9r01qvk0t3brsgctm58v9r01qvk0t3brt0")
+if not API_KEY:
+    raise ValueError("API Key for Finnhub is not set. Please configure it in the environment variables.")
+
+BASE_URL = os.getenv("FINNHUB_BASE_URL", "https://finnhub.io/api/v1")
 
 @app.route('/')
 def index():
-    """Serve the front-end HTML page."""
+    """
+    Serve the front-end HTML page.
+    """
     return render_template('index.html')
 
 @app.route('/stock', methods=['GET'])
 def get_stock_data():
-    """Fetch current stock data."""
-    symbol = request.args.get('symbol', '').upper()
+    """
+    Fetch current stock data (price, change, percent change) and related companies for a given symbol.
+    """
+    symbol = request.args.get('symbol')
     if not symbol:
         return jsonify({"error": "No stock symbol provided"}), 400
 
     try:
-        response = requests.get(f"{BASE_URL}/quote", params={"symbol": symbol, "token": API_KEY})
-        data = response.json()
-        if response.status_code != 200 or 'c' not in data:
-            return jsonify({"error": "Stock data not found."}), 404
+        # Fetch stock quote
+        quote_response = requests.get(
+            f"{BASE_URL}/quote",
+            params={"symbol": symbol, "token": API_KEY}
+        )
+        quote_response.raise_for_status()  # Raise an error for bad status codes
+        quote_data = quote_response.json()
+
+        # Validate quote data
+        if 'c' not in quote_data or quote_data['c'] == 0:
+            return jsonify({"error": "Invalid stock symbol or no data available"}), 404
+
+        # Fetch peers data
+        peers_response = requests.get(
+            f"{BASE_URL}/stock/peers",
+            params={"symbol": symbol, "token": API_KEY}
+        )
+        peers_response.raise_for_status()
+        peers_data = peers_response.json()
+
+        # Ensure peers data is a valid list
+        if not isinstance(peers_data, list):
+            peers_data = []
+
+        # Fetch company profile for dynamic company name
+        profile_response = requests.get(
+            f"{BASE_URL}/stock/profile2",
+            params={"symbol": symbol, "token": API_KEY}
+        )
+        profile_response.raise_for_status()
+        profile_data = profile_response.json()
+
+        company_name = profile_data.get("name", f"{symbol.upper()} Inc.")
+
+        # Return stock data and peers
         return jsonify({
-            "symbol": symbol,
-            "current_price": data.get('c'),
-            "change": data.get('d'),
-            "percent_change": data.get('dp')
+            "symbol": symbol.upper(),
+            "company_name": company_name,
+            "current_price": quote_data['c'],
+            "change": quote_data['d'],
+            "percent_change": quote_data['dp'],
+            "peers": peers_data
         })
+    except requests.HTTPError as http_err:
+        return jsonify({"error": f"HTTP error occurred: {http_err}"}), 500
+    except requests.RequestException as req_error:
+        return jsonify({"error": f"Network error: {str(req_error)}"}), 500
     except Exception as e:
         return jsonify({"error": f"Failed to fetch stock data: {str(e)}"}), 500
 
-@app.route('/graph', methods=['GET'])
-def plot_stock_data():
-    """Generate a stock price graph."""
-    symbol = request.args.get('symbol', '').upper()
-    if not symbol:
-        return jsonify({"error": "No stock symbol provided"}), 400
-
-    try:
-        # Fetch historical data
-        end_time = int(datetime.datetime.now().timestamp())
-        start_time = end_time - 5 * 86400  # Last 5 days
-        response = requests.get(
-            f"{BASE_URL}/stock/candle",
-            params={
-                "symbol": symbol,
-                "resolution": "D",
-                "from": start_time,
-                "to": end_time,
-                "token": API_KEY
-            }
-        )
-        data = response.json()
-        if data.get('s') != 'ok':
-            return jsonify({"error": "No historical data available"}), 404
-
-        days = [datetime.datetime.fromtimestamp(ts).strftime('%a') for ts in data['t']]
-        prices = data['c']
-
-        # Plot the graph
-        plt.figure(figsize=(5, 3))
-        plt.plot(days, prices, marker='o')
-        plt.title(f"Stock Prices for {symbol} Over the Week")
-        plt.xlabel("Day")
-        plt.ylabel("Price")
-        plt.grid(True)
-
-        # Save plot to buffer
-        buf = io.BytesIO()
-        plt.savefig(buf, format='png')
-        buf.seek(0)
-        encoded_image = base64.b64encode(buf.read()).decode('utf-8')
-        buf.close()
-
-        return jsonify({"graph": f"data:image/png;base64,{encoded_image}"})
-    except Exception as e:
-        return jsonify({"error": f"Failed to generate graph: {str(e)}"}), 500
-
-if __name__ == "__main__":
-    app.run(debug=True)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)

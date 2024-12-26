@@ -4,12 +4,65 @@
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Stock Checker</title>
+		<link rel="stylesheet" href="/static/styles.css" />
+		<style>
+			#peers ul {
+				padding: 0;
+				list-style: none;
+				display: flex;
+				flex-wrap: wrap;
+				gap: 10px;
+			}
+
+			#peers ul li {
+				background-color: #007bff;
+				color: white;
+				padding: 5px 10px;
+				border-radius: 5px;
+				font-size: 0.9rem;
+				transition: background-color 0.3s;
+			}
+
+			#peers ul li:hover {
+				background-color: #0056b3;
+			}
+
+			#peers {
+				display: none; /* Initially hidden */
+			}
+
+			/* Add spinner styling */
+			#loading {
+				border: 5px solid #f3f3f3;
+				border-top: 5px solid #007bff;
+				border-radius: 50%;
+				width: 40px;
+				height: 40px;
+				animation: spin 1s linear infinite;
+				margin: 20px auto;
+			}
+
+			@keyframes spin {
+				0% {
+					transform: rotate(0deg);
+				}
+				100% {
+					transform: rotate(360deg);
+				}
+			}
+		</style>
 	</head>
 	<body>
 		<h1>Stock Checker</h1>
 		<form id="stock-form">
 			<label for="symbol">Enter Stock Symbol:</label>
-			<input type="text" id="symbol" name="symbol" required />
+			<input
+				type="text"
+				id="symbol"
+				name="symbol"
+				required
+				autocomplete="off"
+			/>
 			<button type="submit">Search</button>
 		</form>
 		<hr />
@@ -17,38 +70,70 @@
 			<h2 id="stock-name"></h2>
 			<p id="current-price"></p>
 			<p id="trend"></p>
-			<img id="stock-graph" alt="Stock Graph" />
+			<div id="peers">
+				<h3>Related Companies</h3>
+				<ul id="peers-list"></ul>
+			</div>
 		</div>
-
+		<div id="loading" style="display: none"></div>
 		<script>
 			const form = document.getElementById('stock-form');
+			const resultDiv = document.getElementById('result');
+			const peersDiv = document.getElementById('peers');
+			const peersList = document.getElementById('peers-list');
+			const loadingSpinner = document.getElementById('loading');
+
 			form.addEventListener('submit', async (event) => {
 				event.preventDefault();
-				const symbol = document.getElementById('symbol').value;
-				const resultDiv = document.getElementById('result');
+				const symbol = document.getElementById('symbol').value.trim();
+				resultDiv.style.display = 'none';
+				loadingSpinner.style.display = 'block'; // Show spinner
+				peersDiv.style.display = 'none'; // Hide peers section initially
 
-				resultDiv.innerHTML = 'Loading...';
 				try {
 					// Fetch stock data
-					const stockResponse = await fetch(`/stock?symbol=${symbol}`);
-					if (!stockResponse.ok) throw new Error('Failed to fetch stock data');
-					const stockData = await stockResponse.json();
+					const response = await fetch(`/stock?symbol=${symbol}`);
+					if (!response.ok) {
+						if (response.status === 404) {
+							throw new Error(
+								'Stock data not found. Please check the symbol and try again.'
+							);
+						}
+						throw new Error('Failed to fetch stock data.');
+					}
+					const data = await response.json();
 
-					// Fetch stock graph
-					const graphResponse = await fetch(`/graph?symbol=${symbol}`);
-					if (!graphResponse.ok)
-						throw new Error('Failed to generate stock graph');
-					const graphData = await graphResponse.json();
-
-					// Display results
+					// Display stock information with company name
 					resultDiv.innerHTML = `
-                    <h2>${stockData.symbol}</h2>
-                    <p>Current Price: $${stockData.current_price}</p>
-                    <p>Change: $${stockData.change} (${stockData.percent_change}%)</p>
-                    <img src="${graphData.graph}" alt="Stock Graph">
-                `;
+						<h2>${data.company_name || data.symbol} (${data.symbol})</h2>
+						<p>Current Price: $${data.current_price}</p>
+						<p>Change: $${data.change} (${data.percent_change}%)</p>
+					`;
+					resultDiv.style.display = 'block';
+
+					// Display related companies (peers)
+					if (
+						data.peers &&
+						Array.isArray(data.peers) &&
+						data.peers.length > 0
+					) {
+						const peersHtml = data.peers
+							.map(
+								(peer) =>
+									`<li class="peer-item" aria-label="Related company: ${peer}">${peer}</li>`
+							)
+							.join('');
+						peersList.innerHTML = peersHtml;
+						peersDiv.style.display = 'block'; // Show peers section
+					} else {
+						peersList.innerHTML = '<li>No related companies available.</li>';
+						peersDiv.style.display = 'block'; // Show peers section with fallback
+					}
 				} catch (error) {
 					resultDiv.innerHTML = `<p>${error.message}</p>`;
+					resultDiv.style.display = 'block';
+				} finally {
+					loadingSpinner.style.display = 'none'; // Hide spinner
 				}
 			});
 		</script>
