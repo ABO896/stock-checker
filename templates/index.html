@@ -5,52 +5,6 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Stock Checker</title>
 		<link rel="stylesheet" href="/static/styles.css" />
-		<style>
-			#peers ul {
-				padding: 0;
-				list-style: none;
-				display: flex;
-				flex-wrap: wrap;
-				gap: 10px;
-			}
-
-			#peers ul li {
-				background-color: #007bff;
-				color: white;
-				padding: 5px 10px;
-				border-radius: 5px;
-				font-size: 0.9rem;
-				transition: background-color 0.3s;
-			}
-
-			#peers ul li:hover {
-				background-color: #0056b3;
-			}
-
-			#peers {
-				display: none; /* Initially hidden */
-			}
-
-			/* Add spinner styling */
-			#loading {
-				border: 5px solid #f3f3f3;
-				border-top: 5px solid #007bff;
-				border-radius: 50%;
-				width: 40px;
-				height: 40px;
-				animation: spin 1s linear infinite;
-				margin: 20px auto;
-			}
-
-			@keyframes spin {
-				0% {
-					transform: rotate(0deg);
-				}
-				100% {
-					transform: rotate(360deg);
-				}
-			}
-		</style>
 	</head>
 	<body>
 		<h1>Stock Checker</h1>
@@ -65,75 +19,90 @@
 			/>
 			<button type="submit">Search</button>
 		</form>
-		<hr />
+		<div id="loading"></div>
 		<div id="result">
 			<h2 id="stock-name"></h2>
 			<p id="current-price"></p>
-			<p id="trend"></p>
-			<div id="peers">
-				<h3>Related Companies</h3>
-				<ul id="peers-list"></ul>
-			</div>
+			<p id="change"></p>
 		</div>
-		<div id="loading" style="display: none"></div>
+		<div id="peers" style="display: none">
+			<h3>Related Companies</h3>
+			<ul id="peers-list"></ul>
+		</div>
+		<div class="error" id="error-message"></div>
 		<script>
 			const form = document.getElementById('stock-form');
 			const resultDiv = document.getElementById('result');
 			const peersDiv = document.getElementById('peers');
 			const peersList = document.getElementById('peers-list');
+			const stockName = document.getElementById('stock-name');
+			const currentPrice = document.getElementById('current-price');
+			const change = document.getElementById('change');
 			const loadingSpinner = document.getElementById('loading');
+			const errorMessage = document.getElementById('error-message');
 
 			form.addEventListener('submit', async (event) => {
 				event.preventDefault();
 				const symbol = document.getElementById('symbol').value.trim();
+
+				console.log(`Search submitted for symbol: ${symbol}`);
+
+				// Clear previous results and errors
+				stockName.textContent = '';
+				currentPrice.textContent = '';
+				change.textContent = '';
+				peersList.innerHTML = '';
+				errorMessage.textContent = '';
 				resultDiv.style.display = 'none';
-				loadingSpinner.style.display = 'block'; // Show spinner
-				peersDiv.style.display = 'none'; // Hide peers section initially
+				loadingSpinner.style.display = 'block';
 
 				try {
-					// Fetch stock data
+					// Fetch stock data from server
 					const response = await fetch(`/stock?symbol=${symbol}`);
 					if (!response.ok) {
 						if (response.status === 404) {
 							throw new Error(
 								'Stock data not found. Please check the symbol and try again.'
 							);
+						} else {
+							throw new Error(
+								'An error occurred while fetching stock data. Please try again later.'
+							);
 						}
-						throw new Error('Failed to fetch stock data.');
 					}
-					const data = await response.json();
 
-					// Display stock information with company name
-					resultDiv.innerHTML = `
-						<h2>${data.company_name || data.symbol} (${data.symbol})</h2>
-						<p>Current Price: $${data.current_price}</p>
-						<p>Change: $${data.change} (${data.percent_change}%)</p>
-					`;
+					const data = await response.json();
+					console.log('Response data received:', data);
+
+					// Display stock name and current price
+					stockName.textContent = `${data.company_name || symbol} (${symbol})`;
+					currentPrice.textContent = `Current Price: $${data.current_price}`;
+					change.textContent = `Change: $${data.change} (${data.percent_change}%)`;
 					resultDiv.style.display = 'block';
 
-					// Display related companies (peers)
+					// Display peers data
 					if (
 						data.peers &&
 						Array.isArray(data.peers) &&
 						data.peers.length > 0
 					) {
+						peersDiv.style.display = 'block';
 						const peersHtml = data.peers
-							.map(
-								(peer) =>
-									`<li class="peer-item" aria-label="Related company: ${peer}">${peer}</li>`
-							)
+							.map((peer) => `<li>${peer}</li>`)
 							.join('');
 						peersList.innerHTML = peersHtml;
-						peersDiv.style.display = 'block'; // Show peers section
+						console.log('Peers list updated:', peersList.innerHTML);
 					} else {
 						peersList.innerHTML = '<li>No related companies available.</li>';
-						peersDiv.style.display = 'block'; // Show peers section with fallback
 					}
 				} catch (error) {
-					resultDiv.innerHTML = `<p>${error.message}</p>`;
-					resultDiv.style.display = 'block';
+					console.error('Error fetching stock data:', error);
+					errorMessage.textContent = error.message;
+					setTimeout(() => {
+						errorMessage.textContent = '';
+					}, 5000);
 				} finally {
-					loadingSpinner.style.display = 'none'; // Hide spinner
+					loadingSpinner.style.display = 'none';
 				}
 			});
 		</script>
