@@ -2,12 +2,16 @@ from flask import Flask, request, jsonify, render_template
 import requests
 from flask_cors import CORS
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
 # Load API Key from environment variables for better security
-API_KEY = os.getenv("FINNHUB_API_KEY", "ctm58v9r01qvk0t3brsgctm58v9r01qvk0t3brt0")
+API_KEY = os.getenv("FINNHUB_API_KEY")
 if not API_KEY:
     raise ValueError(
         "API Key for Finnhub is not set. Please configure it in the environment variables."
