@@ -41,23 +41,8 @@
 			const loadingSpinner = document.getElementById('loading');
 			const errorMessage = document.getElementById('error-message');
 
-			form.addEventListener('submit', async (event) => {
-				event.preventDefault();
-				const symbol = document.getElementById('symbol').value.trim();
-
-				console.log(`Search submitted for symbol: ${symbol}`);
-
-				// Clear previous results and errors
-				stockName.textContent = '';
-				currentPrice.textContent = '';
-				change.textContent = '';
-				peersList.innerHTML = '';
-				errorMessage.textContent = '';
-				resultDiv.style.display = 'none';
-				loadingSpinner.style.display = 'block';
-
+			async function fetchStockData(symbol) {
 				try {
-					// Fetch stock data from server
 					const response = await fetch(`/stock?symbol=${symbol}`);
 					if (!response.ok) {
 						if (response.status === 404) {
@@ -70,8 +55,39 @@
 							);
 						}
 					}
+					return await response.json();
+				} catch (error) {
+					throw error;
+				}
+			}
 
-					const data = await response.json();
+			function displayError(message) {
+				errorMessage.textContent = message;
+				setTimeout(() => {
+					errorMessage.textContent = '';
+				}, 5000);
+			}
+
+			function clearPreviousResults() {
+				stockName.textContent = '';
+				currentPrice.textContent = '';
+				change.textContent = '';
+				peersList.innerHTML = '';
+				errorMessage.textContent = '';
+				resultDiv.style.display = 'none';
+			}
+
+			form.addEventListener('submit', async (event) => {
+				event.preventDefault();
+				const symbol = document.getElementById('symbol').value.trim();
+
+				console.log(`Search submitted for symbol: ${symbol}`);
+
+				clearPreviousResults();
+				loadingSpinner.style.display = 'block';
+
+				try {
+					const data = await fetchStockData(symbol);
 					console.log('Response data received:', data);
 
 					// Display stock name and current price
@@ -86,21 +102,19 @@
 						Array.isArray(data.peers) &&
 						data.peers.length > 0
 					) {
-						peersDiv.style.display = 'block';
 						const peersHtml = data.peers
 							.map((peer) => `<li>${peer}</li>`)
 							.join('');
 						peersList.innerHTML = peersHtml;
+						peersDiv.style.display = 'block';
 						console.log('Peers list updated:', peersList.innerHTML);
 					} else {
 						peersList.innerHTML = '<li>No related companies available.</li>';
+						peersDiv.style.display = 'block';
 					}
 				} catch (error) {
 					console.error('Error fetching stock data:', error);
-					errorMessage.textContent = error.message;
-					setTimeout(() => {
-						errorMessage.textContent = '';
-					}, 5000);
+					displayError(error.message);
 				} finally {
 					loadingSpinner.style.display = 'none';
 				}
