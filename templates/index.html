@@ -68,14 +68,15 @@
 				}, 5000);
 			}
 
-			function clearPreviousResults() {
-				stockName.textContent = '';
-				currentPrice.textContent = '';
-				change.textContent = '';
-				peersList.innerHTML = '';
-				errorMessage.textContent = '';
-				resultDiv.style.display = 'none';
-			}
+        function clearPreviousResults() {
+                stockName.textContent = '';
+                currentPrice.textContent = '';
+                change.textContent = '';
+                peersList.innerHTML = '';
+                errorMessage.textContent = '';
+                resultDiv.style.display = 'none';
+                peersDiv.style.display = 'none';
+        }
 
 			form.addEventListener('submit', async (event) => {
 				event.preventDefault();
