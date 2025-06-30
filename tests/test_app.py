@@ -1,11 +1,11 @@
 import os
+
+# Ensure the API key is set before importing the app
+os.environ.setdefault("FINNHUB_API_KEY", "testkey")
+
 import sys
 from pathlib import Path
 from unittest.mock import patch, Mock
-import pytest
-
-# Ensure the API key is set for app import
-os.environ.setdefault('FINNHUB_API_KEY', 'testkey')
 
 # Ensure the project root is on the Python path so ``app`` can be imported
 ROOT_DIR = Path(__file__).resolve().parents[1]
