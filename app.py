@@ -40,7 +40,9 @@ def get_stock_data():
     try:
         # Fetch stock quote
         quote_response = requests.get(
-            f"{BASE_URL}/quote", params={"symbol": symbol, "token": API_KEY}
+            f"{BASE_URL}/quote",
+            params={"symbol": symbol, "token": API_KEY},
+            timeout=10,
         )
         quote_response.raise_for_status()  # Raise an error for bad status codes
         quote_data = quote_response.json()
@@ -51,7 +53,9 @@ def get_stock_data():
 
         # Fetch peers data
         peers_response = requests.get(
-            f"{BASE_URL}/stock/peers", params={"symbol": symbol, "token": API_KEY}
+            f"{BASE_URL}/stock/peers",
+            params={"symbol": symbol, "token": API_KEY},
+            timeout=10,
         )
         peers_response.raise_for_status()
         peers_data = peers_response.json()
@@ -62,7 +66,9 @@ def get_stock_data():
 
         # Fetch company profile for dynamic company name
         profile_response = requests.get(
-            f"{BASE_URL}/stock/profile2", params={"symbol": symbol, "token": API_KEY}
+            f"{BASE_URL}/stock/profile2",
+            params={"symbol": symbol, "token": API_KEY},
+            timeout=10,
         )
         profile_response.raise_for_status()
         profile_data = profile_response.json()
