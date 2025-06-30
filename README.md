@@ -25,7 +25,7 @@ This project is a simple stock market checker web application. It allows users t
    ```
 2. Install dependencies:
    ```bash
-   pip install flask
+   bash .codex/setup.sh
    ```
 3. Run the Flask application:
    ```bash
