@@ -25,15 +25,20 @@ This project is a simple stock market checker web application. It allows users t
    ```
 2. Install dependencies:
    ```bash
-
+   pip install -r requirements.txt
    ```
-3. Set the `FINNHUB_API_KEY` environment variable with your API key:
+3. Set the `FINNHUB_API_KEY` environment variable with your API key (and optionally
+   `FINNHUB_BASE_URL`):
    ```bash
    export FINNHUB_API_KEY=YOUR_API_KEY_HERE
+   # export FINNHUB_BASE_URL="https://finnhub.io/api/v1"  # optional
    ```
 4. Run the Flask application:
    ```bash
-   flask run
+   # Either using Flask's CLI
+   flask --app app run
+   # Or simply
+   # python app.py
    ```
 5. Open the application in your browser:
    ```
