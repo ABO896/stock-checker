@@ -70,3 +70,26 @@ def test_get_stock_invalid_symbol():
     assert response.status_code == 404
     data = response.get_json()
     assert 'Invalid stock symbol' in data['error']
+
+
+def test_search_valid_query():
+    client = flask_app.test_client()
+
+    def mock_get(url, params=None, **kwargs):
+        if url.endswith('/search'):
+            return create_mock_response({'result': [{'symbol': 'AAPL', 'description': 'Apple Inc.'}]})
+        else:
+            raise ValueError(f'Unexpected URL {url}')
+
+    with patch('app.requests.get', side_effect=mock_get):
+        response = client.get('/search', query_string={'query': 'apple'})
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data['results'][0]['symbol'] == 'AAPL'
+
+
+def test_search_missing_query():
+    client = flask_app.test_client()
+    response = client.get('/search')
+    assert response.status_code == 400

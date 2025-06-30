@@ -28,6 +28,34 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/search")
+def search_symbol():
+    """Return symbol suggestions for autocomplete."""
+    query = request.args.get("query")
+    if not query:
+        return jsonify({"error": "No query provided"}), 400
+
+    try:
+        search_resp = requests.get(
+            f"{BASE_URL}/search",
+            params={"q": query, "token": API_KEY},
+            timeout=10,
+        )
+        search_resp.raise_for_status()
+        data = search_resp.json()
+        results = []
+        for item in data.get("result", [])[:5]:
+            results.append(
+                {
+                    "symbol": item.get("symbol"),
+                    "description": item.get("description"),
+                }
+            )
+        return jsonify({"results": results})
+    except requests.RequestException as err:
+        return jsonify({"error": f"Failed to fetch suggestions: {err}"}), 500
+
+
 @app.route("/stock", methods=["GET"])
 def get_stock_data():
     """
