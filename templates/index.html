@@ -10,13 +10,15 @@
 		<h1>Stock Checker</h1>
 		<form id="stock-form">
 			<label for="symbol">Enter Stock Symbol:</label>
-			<input
-				type="text"
-				id="symbol"
-				name="symbol"
-				required
-				autocomplete="off"
-			/>
+                        <input
+                                type="text"
+                                id="symbol"
+                                name="symbol"
+                                list="suggestions"
+                                required
+                                autocomplete="off"
+                        />
+                        <datalist id="suggestions"></datalist>
 			<button type="submit">Search</button>
 		</form>
 		<div id="loading"></div>
@@ -32,14 +34,16 @@
 		<div class="error" id="error-message"></div>
 		<script>
 			const form = document.getElementById('stock-form');
-			const resultDiv = document.getElementById('result');
-			const peersDiv = document.getElementById('peers');
-			const peersList = document.getElementById('peers-list');
-			const stockName = document.getElementById('stock-name');
-			const currentPrice = document.getElementById('current-price');
-			const change = document.getElementById('change');
-			const loadingSpinner = document.getElementById('loading');
-			const errorMessage = document.getElementById('error-message');
+                        const resultDiv = document.getElementById('result');
+                        const peersDiv = document.getElementById('peers');
+                        const peersList = document.getElementById('peers-list');
+                        const stockName = document.getElementById('stock-name');
+                        const currentPrice = document.getElementById('current-price');
+                        const change = document.getElementById('change');
+                        const loadingSpinner = document.getElementById('loading');
+                        const errorMessage = document.getElementById('error-message');
+                        const suggestions = document.getElementById('suggestions');
+                        const symbolInput = document.getElementById('symbol');
 
 			async function fetchStockData(symbol) {
 				try {
@@ -78,6 +82,39 @@
                 peersDiv.style.display = 'none';
         }
 
+                        async function fetchSuggestions(query) {
+                                try {
+                                        const resp = await fetch(`/search?query=${encodeURIComponent(query)}`);
+                                        if (!resp.ok) {
+                                                return [];
+                                        }
+                                        const data = await resp.json();
+                                        return data.results || [];
+                                } catch (err) {
+                                        console.error('Error fetching suggestions:', err);
+                                        return [];
+                                }
+                        }
+
+                        let suggestionTimeout;
+                        symbolInput.addEventListener('input', async (e) => {
+                                const val = e.target.value.trim();
+                                clearTimeout(suggestionTimeout);
+                                if (val.length < 2) {
+                                        suggestions.innerHTML = '';
+                                        return;
+                                }
+                                suggestionTimeout = setTimeout(async () => {
+                                        const results = await fetchSuggestions(val);
+                                        suggestions.innerHTML = results
+                                                .map(
+                                                        (r) =>
+                                                                `<option value="${r.symbol}">${r.description} (${r.symbol})</option>`
+                                                )
+                                                .join('');
+                                }, 300);
+                        });
+
 			form.addEventListener('submit', async (event) => {
 				event.preventDefault();
 				const symbol = document.getElementById('symbol').value.trim();
@@ -97,29 +134,40 @@
 					change.textContent = `Change: $${data.change} (${data.percent_change}%)`;
 					resultDiv.style.display = 'block';
 
-					// Display peers data
-					if (
-						data.peers &&
-						Array.isArray(data.peers) &&
-						data.peers.length > 0
-					) {
-						const peersHtml = data.peers
-							.map((peer) => `<li>${peer}</li>`)
-							.join('');
-						peersList.innerHTML = peersHtml;
-						peersDiv.style.display = 'block';
-                                                // console.log('Peers list updated:', peersList.innerHTML);
-					} else {
-						peersList.innerHTML = '<li>No related companies available.</li>';
-						peersDiv.style.display = 'block';
-					}
+                                        // Display peers data
+                                        if (
+                                                data.peers &&
+                                                Array.isArray(data.peers) &&
+                                                data.peers.length > 0
+                                        ) {
+                                                const peersHtml = data.peers
+                                                        .map(
+                                                                (peer) =>
+                                                                        `<li><button type="button" class="peer-button" data-symbol="${peer}">${peer}</button></li>`
+                                                        )
+                                                        .join('');
+                                                peersList.innerHTML = peersHtml;
+                                                peersDiv.style.display = 'block';
+                                        } else {
+                                                peersList.innerHTML = '<li>No related companies available.</li>';
+                                                peersDiv.style.display = 'block';
+                                        }
 				} catch (error) {
 					console.error('Error fetching stock data:', error);
 					displayError(error.message);
-				} finally {
-					loadingSpinner.style.display = 'none';
-				}
-			});
-		</script>
-	</body>
+                                } finally {
+                                        loadingSpinner.style.display = 'none';
+                                }
+                        });
+
+                        peersList.addEventListener('click', (event) => {
+                                const button = event.target.closest('.peer-button');
+                                if (button) {
+                                        const sym = button.getAttribute('data-symbol');
+                                        symbolInput.value = sym;
+                                        form.dispatchEvent(new Event('submit'));
+                                }
+                        });
+                </script>
+        </body>
 </html>
