@@ -1,85 +1,90 @@
 # Stock Market Checker
 
-This project is a simple stock market checker web application. It allows users to enter a stock symbol, view the current price, change, and related companies (peers).
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue)](#requirements)
+
+A lightweight Flask application for checking stock prices and related market information using the [Finnhub](https://finnhub.io/) API. It provides a web interface to search for symbols, view peers, basic financial metrics and the latest news.
+
+## Table of Contents
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Environment Variables](#environment-variables)
+- [Usage](#usage)
+- [Tests](#tests)
+- [Project Structure](#project-structure)
+- [Deployment](#deployment)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## Features
-- Search for a stock by symbol.
-- Display stock information including:
-  - Current price.
-  - Change in value.
-  - Percentage change.
-- View a list of related companies (peers).
-- Loading spinner while fetching data.
-- Error handling for invalid symbols and network issues.
-- View recent company news.
-- Display quarterly earnings surprises.
+- Autocomplete search for stock symbols
+- Display current price, daily change and percentage change
+- Show related companies (peers)
+- Present basic financial metrics
+- Fetch recent company news and earnings surprises
+- API caching to reduce network calls
+- Simple HTML/CSS front‑end with accessible design
 
-## Requirements
-- Python 3.x
-- Flask
-- Internet connection (for fetching stock data)
-
-## Setup Instructions
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/stock-checker.git
-   cd stock-checker
-   ```
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Set the `FINNHUB_API_KEY` environment variable with your API key (and optionally
-   `FINNHUB_BASE_URL`):
-   ```bash
-   export FINNHUB_API_KEY=YOUR_API_KEY_HERE
-   # export FINNHUB_BASE_URL="https://finnhub.io/api/v1"  # optional
-   ```
-4. Run the Flask application:
-   ```bash
-   # Either using Flask's CLI
-   flask --app app run
-   # Or simply
-   # python app.py
-   ```
-5. Open the application in your browser:
-   ```
-   http://127.0.0.1:5000
-   ```
-
-## Environment Variables
-
-Before running the application, make sure to set a `FINNHUB_API_KEY`. The easiest way is to create a `.env` file containing:
-
+## Quick Start
+Clone the repository and install the dependencies:
 ```bash
-FINNHUB_API_KEY=your_api_key_here
+git clone https://github.com/yourusername/stock-checker.git
+cd stock-checker
+pip install -r requirements.txt
 ```
 
-You can optionally set `FINNHUB_BASE_URL` to override the default endpoint of `https://finnhub.io/api/v1`.
+Create a `.env` file with your [Finnhub API key](https://finnhub.io/):
+```bash
+FINNHUB_API_KEY=your_api_key_here
+# FINNHUB_BASE_URL=https://finnhub.io/api/v1  # optional
+```
+
+Run the application using Flask:
+```bash
+flask --app app run
+```
+Then open <http://127.0.0.1:5000> in your browser.
+
+## Environment Variables
+The application relies on the following variables:
+- `FINNHUB_API_KEY` (required) – your Finnhub API token.
+- `FINNHUB_BASE_URL` (optional) – override the base URL of the API.
+- `CACHE_TTL` (optional) – cache time‑to‑live in seconds (default: `60`).
+
+## Usage
+The web interface is the easiest way to interact with the app, but you can also query the JSON endpoints directly:
+
+- `/search?query=AAPL` – symbol autocomplete.
+- `/market-status?exchange=US` – current market status.
+- `/stock?symbol=AAPL` – core stock information and peers.
+- `/company-news?symbol=AAPL&from=2025-01-01&to=2025-01-31` – recent news.
+- `/earnings?symbol=AAPL&limit=4` – quarterly earnings surprises.
+
+Results are returned as JSON and used by the front‑end.
+
+## Tests
+Run the unit tests with `pytest`:
+```bash
+pytest -q
+```
+All tests should pass without needing a real API key because network calls are mocked.
 
 ## Project Structure
 ```
 stock-checker/
-├── static/
-│   └── styles.css         # CSS for styling
-├── templates/
-│   └── index.html         # HTML file
-├── app.py                 # Flask backend
-└── README.md              # Project documentation
+├── app.py            # Flask application
+├── static/           # CSS styles
+├── templates/        # HTML templates
+├── tests/            # Pytest suite
+├── requirements.txt  # Python dependencies
+└── vercel.json       # Configuration for Vercel deployment
 ```
 
-## Further Development
-- Add stock performance graphs using Chart.js.
-- Implement user accounts and favorites feature.
-- Optimize API calls with caching.
+## Deployment
+The project includes a `vercel.json` file for deploying to [Vercel](https://vercel.com/). Make sure to add `FINNHUB_API_KEY` (and optionally `FINNHUB_BASE_URL`) as environment variables in your Vercel project settings.
 
-## Deploying to Vercel
-Vercel requires the `@vercel/python` build step to run this Flask application.
-The included `vercel.json` deploys `app.py` as a serverless function.
-
-When setting up your project on Vercel, add the `FINNHUB_API_KEY` variable
-(and optionally `FINNHUB_BASE_URL`) in the **Environment Variables** section
-of your project settings.
+## Contributing
+Contributions are welcome! Please open an issue or submit a pull request. Make sure your changes are covered by tests and pass `pytest` before sending a PR.
 
 ## License
-This project is licensed under the MIT License.
+This project is licensed under the [MIT License](LICENSE).
