@@ -157,5 +157,51 @@ def get_stock_data():
         return jsonify({"error": f"Failed to fetch stock data: {str(e)}"}), 500
 
 
+@app.route("/company-news")
+def company_news():
+    """Return latest company news for a symbol between two dates."""
+    symbol = request.args.get("symbol")
+    from_date = request.args.get("from")
+    to_date = request.args.get("to")
+    if not symbol or not from_date or not to_date:
+        return (
+            jsonify({"error": "symbol, from and to parameters are required"}),
+            400,
+        )
+
+    try:
+        data = cached_get(
+            f"{BASE_URL}/company-news",
+            params={
+                "symbol": symbol,
+                "from": from_date,
+                "to": to_date,
+                "token": API_KEY,
+            },
+        )
+        return jsonify(data)
+    except requests.RequestException as err:
+        return jsonify({"error": f"Failed to fetch company news: {err}"}), 500
+
+
+@app.route("/earnings")
+def earnings_surprises():
+    """Return quarterly earnings surprises for a company."""
+    symbol = request.args.get("symbol")
+    limit = request.args.get("limit")
+    if not symbol:
+        return jsonify({"error": "symbol parameter is required"}), 400
+
+    params = {"symbol": symbol, "token": API_KEY}
+    if limit:
+        params["limit"] = limit
+
+    try:
+        data = cached_get(f"{BASE_URL}/stock/earnings", params=params)
+        return jsonify(data)
+    except requests.RequestException as err:
+        return jsonify({"error": f"Failed to fetch earnings data: {err}"}), 500
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

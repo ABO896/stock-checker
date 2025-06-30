@@ -47,14 +47,36 @@
                         <h3>Basic Financials</h3>
                         <ul id="financials-list"></ul>
                 </div>
+                <div id="news" style="display: none">
+                        <h3>Company News</h3>
+                        <ul id="news-list"></ul>
+                </div>
+                <div id="earnings" style="display: none">
+                        <h3>Earnings Surprises</h3>
+                        <table id="earnings-table">
+                                <thead>
+                                        <tr>
+                                                <th>Period</th>
+                                                <th>Actual</th>
+                                                <th>Estimate</th>
+                                                <th>Surprise</th>
+                                        </tr>
+                                </thead>
+                                <tbody id="earnings-body"></tbody>
+                        </table>
+                </div>
                 <div class="error" id="error-message"></div>
-		<script>
-			const form = document.getElementById('stock-form');
+                <script>
+                        const form = document.getElementById('stock-form');
                         const resultDiv = document.getElementById('result');
         const peersDiv = document.getElementById('peers');
         const peersList = document.getElementById('peers-list');
         const financialsDiv = document.getElementById('financials');
         const financialsList = document.getElementById('financials-list');
+        const newsDiv = document.getElementById('news');
+        const newsList = document.getElementById('news-list');
+        const earningsDiv = document.getElementById('earnings');
+        const earningsBody = document.getElementById('earnings-body');
         const marketInfo = document.getElementById('market-info');
         const stockName = document.getElementById('stock-name');
                         const currentPrice = document.getElementById('current-price');
@@ -82,8 +104,8 @@
 
         window.addEventListener('load', fetchMarketStatus);
 
-			async function fetchStockData(symbol) {
-				try {
+                        async function fetchStockData(symbol) {
+                                try {
                                         const response = await fetch(`/stock?symbol=${encodeURIComponent(symbol)}`);
 					if (!response.ok) {
 						if (response.status === 404) {
@@ -96,11 +118,37 @@
 							);
 						}
 					}
-					return await response.json();
-				} catch (error) {
-					throw error;
-				}
-			}
+                                        return await response.json();
+                                } catch (error) {
+                                        throw error;
+                                }
+                        }
+
+        async function fetchCompanyNews(symbol, from, to) {
+                try {
+                        const resp = await fetch(`/company-news?symbol=${encodeURIComponent(symbol)}&from=${from}&to=${to}`);
+                        if (!resp.ok) {
+                                return [];
+                        }
+                        return await resp.json();
+                } catch (err) {
+                        console.error('Error fetching news:', err);
+                        return [];
+                }
+        }
+
+        async function fetchEarnings(symbol, limit = 4) {
+                try {
+                        const resp = await fetch(`/earnings?symbol=${encodeURIComponent(symbol)}&limit=${limit}`);
+                        if (!resp.ok) {
+                                return [];
+                        }
+                        return await resp.json();
+                } catch (err) {
+                        console.error('Error fetching earnings:', err);
+                        return [];
+                }
+        }
 
         function displayError(message) {
                 errorMessage.textContent = message;
@@ -117,13 +165,19 @@
                 change.textContent = '';
                 peersList.innerHTML = '';
                 financialsList.innerHTML = '';
+                newsList.innerHTML = '';
+                earningsBody.innerHTML = '';
                 errorMessage.textContent = '';
                 resultDiv.style.display = 'none';
                 peersDiv.style.display = 'none';
                 financialsDiv.style.display = 'none';
+                newsDiv.style.display = 'none';
+                earningsDiv.style.display = 'none';
                 resultDiv.classList.remove('fade-in');
                 peersDiv.classList.remove('fade-in');
                 financialsDiv.classList.remove('fade-in');
+                newsDiv.classList.remove('fade-in');
+                earningsDiv.classList.remove('fade-in');
         }
 
                         async function fetchSuggestions(query) {
@@ -185,8 +239,8 @@
 				clearPreviousResults();
 				loadingSpinner.style.display = 'block';
 
-				try {
-					const data = await fetchStockData(symbol);
+                                try {
+                                        const data = await fetchStockData(symbol);
                                         // console.log('Response data received:', data);
 
 					// Display stock name and current price
@@ -195,6 +249,39 @@
 					change.textContent = `Change: $${data.change} (${data.percent_change}%)`;
                                         resultDiv.style.display = 'block';
                                         resultDiv.classList.add('fade-in');
+
+                                        const toDate = new Date();
+                                        const toStr = toDate.toISOString().slice(0, 10);
+                                        const fromDate = new Date(toDate);
+                                        fromDate.setMonth(fromDate.getMonth() - 1);
+                                        const fromStr = fromDate.toISOString().slice(0, 10);
+                                        const news = await fetchCompanyNews(symbol, fromStr, toStr);
+                                        if (news && news.length > 0) {
+                                                const newsHtml = news.slice(0, 5)
+                                                        .map(n => `<li><a href="${n.url}" target="_blank" rel="noopener">${n.headline}</a></li>`)
+                                                        .join('');
+                                                newsList.innerHTML = newsHtml;
+                                                newsDiv.style.display = 'block';
+                                                newsDiv.classList.add('fade-in');
+                                        } else {
+                                                newsList.innerHTML = '<li>No recent news available.</li>';
+                                                newsDiv.style.display = 'block';
+                                                newsDiv.classList.add('fade-in');
+                                        }
+
+                                        const earnings = await fetchEarnings(symbol, 4);
+                                        if (earnings && earnings.length > 0) {
+                                                const rows = earnings
+                                                        .map(e => `<tr><td>${e.period}</td><td>${e.actual}</td><td>${e.estimate}</td><td>${e.surprise}</td></tr>`)
+                                                        .join('');
+                                                earningsBody.innerHTML = rows;
+                                                earningsDiv.style.display = 'block';
+                                                earningsDiv.classList.add('fade-in');
+                                        } else {
+                                                earningsBody.innerHTML = '<tr><td colspan="4">No data</td></tr>';
+                                                earningsDiv.style.display = 'block';
+                                                earningsDiv.classList.add('fade-in');
+                                        }
 
                                         // Display peers data
                                         if (

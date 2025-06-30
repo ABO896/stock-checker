@@ -11,6 +11,8 @@ This project is a simple stock market checker web application. It allows users t
 - View a list of related companies (peers).
 - Loading spinner while fetching data.
 - Error handling for invalid symbols and network issues.
+- View recent company news.
+- Display quarterly earnings surprises.
 
 ## Requirements
 - Python 3.x
