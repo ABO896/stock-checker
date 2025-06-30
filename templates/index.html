@@ -15,19 +15,25 @@
                         <h3>Market Status</h3>
                         <p id="market-info">Loading...</p>
                 </div>
-		<form id="stock-form">
-			<label for="symbol">Enter Stock Symbol:</label>
-                        <input
-                                type="text"
-                                id="symbol"
-                                name="symbol"
-                                list="suggestions"
-                                required
-                                autocomplete="off"
-                        />
-                        <datalist id="suggestions"></datalist>
-			<button type="submit">Search</button>
-		</form>
+                <form id="stock-form" class="search-form">
+                        <label for="symbol" class="visually-hidden">Stock Symbol</label>
+                        <div class="search-input-wrapper">
+                                <input
+                                        type="text"
+                                        id="symbol"
+                                        name="symbol"
+                                        placeholder="Search ticker e.g. AAPL"
+                                        autocomplete="off"
+                                        required
+                                />
+                                <button type="submit" aria-label="Search" class="search-button">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M11 4a7 7 0 015.468 11.37l4.281 4.28-1.414 1.415-4.28-4.281A7 7 0 1111 4zm0 2a5 5 0 100 10 5 5 0 000-10z" fill="currentColor"/>
+                                        </svg>
+                                </button>
+                        </div>
+                        <ul id="suggestions-list" class="suggestions-list"></ul>
+                </form>
 		<div id="loading"></div>
 		<div id="result">
 			<h2 id="stock-name"></h2>
@@ -56,7 +62,7 @@
                         const change = document.getElementById('change');
                         const loadingSpinner = document.getElementById('loading');
                         const errorMessage = document.getElementById('error-message');
-        const suggestions = document.getElementById('suggestions');
+        const suggestionsList = document.getElementById('suggestions-list');
         const symbolInput = document.getElementById('symbol');
 
         async function fetchMarketStatus() {
@@ -135,24 +141,41 @@
                                 }
                         }
 
-                        let suggestionTimeout;
-                        symbolInput.addEventListener('input', async (e) => {
-                                const val = e.target.value.trim();
-                                clearTimeout(suggestionTimeout);
-                                if (val.length < 2) {
-                                        suggestions.innerHTML = '';
-                                        return;
-                                }
-                                suggestionTimeout = setTimeout(async () => {
-                                        const results = await fetchSuggestions(val);
-                                        suggestions.innerHTML = results
-                                                .map(
-                                                        (r) =>
-                                                                `<option value="${r.symbol}">${r.description} (${r.symbol})</option>`
-                                                )
-                                                .join('');
-                                }, 300);
-                        });
+        let suggestionTimeout;
+        symbolInput.addEventListener('input', (e) => {
+                const val = e.target.value.trim();
+                clearTimeout(suggestionTimeout);
+                if (val.length < 2) {
+                        suggestionsList.innerHTML = '';
+                        suggestionsList.style.display = 'none';
+                        return;
+                }
+                suggestionTimeout = setTimeout(async () => {
+                        const results = await fetchSuggestions(val);
+                        suggestionsList.innerHTML = results
+                                .map(
+                                        (r) =>
+                                                `<li data-symbol="${r.symbol}">${r.description} (${r.symbol})</li>`
+                                )
+                                .join('');
+                        suggestionsList.style.display = results.length ? 'block' : 'none';
+                }, 300);
+        });
+
+        suggestionsList.addEventListener('click', (e) => {
+                const item = e.target.closest('li[data-symbol]');
+                if (item) {
+                        symbolInput.value = item.getAttribute('data-symbol');
+                        suggestionsList.style.display = 'none';
+                        form.dispatchEvent(new Event('submit'));
+                }
+        });
+
+        document.addEventListener('click', (e) => {
+                if (!form.contains(e.target)) {
+                        suggestionsList.style.display = 'none';
+                }
+        });
 
 			form.addEventListener('submit', async (event) => {
 				event.preventDefault();
