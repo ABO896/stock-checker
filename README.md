@@ -20,25 +20,39 @@ This project is a simple stock market checker web application. It allows users t
 ## Setup Instructions
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/stockmarketchecker.git
-   cd stockmarketchecker
+   git clone https://github.com/yourusername/stock-checker.git
+   cd stock-checker
    ```
 2. Install dependencies:
    ```bash
-   bash .codex/setup.sh
+
    ```
-3. Run the Flask application:
+3. Set the `FINNHUB_API_KEY` environment variable with your API key:
+   ```bash
+   export FINNHUB_API_KEY=YOUR_API_KEY_HERE
+   ```
+4. Run the Flask application:
    ```bash
    flask run
    ```
-4. Open the application in your browser:
+5. Open the application in your browser:
    ```
    http://127.0.0.1:5000
    ```
 
+## Environment Variables
+
+Before running the application, make sure to set a `FINNHUB_API_KEY`. The easiest way is to create a `.env` file containing:
+
+```bash
+FINNHUB_API_KEY=your_api_key_here
+```
+
+You can optionally set `FINNHUB_BASE_URL` to override the default endpoint of `https://finnhub.io/api/v1`.
+
 ## Project Structure
 ```
-stockmarketchecker/
+stock-checker/
 ├── static/
 │   └── styles.css         # CSS for styling
 ├── templates/
