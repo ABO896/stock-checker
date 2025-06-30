@@ -43,7 +43,7 @@
 
 			async function fetchStockData(symbol) {
 				try {
-					const response = await fetch(`/stock?symbol=${symbol}`);
+                                        const response = await fetch(`/stock?symbol=${encodeURIComponent(symbol)}`);
 					if (!response.ok) {
 						if (response.status === 404) {
 							throw new Error(
