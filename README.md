@@ -27,9 +27,10 @@ This project is a simple stock market checker web application. It allows users t
    ```bash
 
    ```
-3. Set the `FINNHUB_API_KEY` environment variable with your API key:
+3. Copy `.env.example` to `.env` and update it with your Finnhub API key:
    ```bash
-   export FINNHUB_API_KEY=YOUR_API_KEY_HERE
+   cp .env.example .env
+   # then edit .env and set FINNHUB_API_KEY
    ```
 4. Run the Flask application:
    ```bash
@@ -42,13 +43,14 @@ This project is a simple stock market checker web application. It allows users t
 
 ## Environment Variables
 
-Before running the application, make sure to set a `FINNHUB_API_KEY`. The easiest way is to create a `.env` file containing:
+Before running the application, make sure to set a `FINNHUB_API_KEY`. A `.env.example` file is provided as a template. Copy it to `.env` and fill in your API key:
 
 ```bash
-FINNHUB_API_KEY=your_api_key_here
+cp .env.example .env
+# edit .env and set FINNHUB_API_KEY
 ```
 
-You can optionally set `FINNHUB_BASE_URL` to override the default endpoint of `https://finnhub.io/api/v1`.
+You can optionally set `FINNHUB_BASE_URL` in `.env` to override the default endpoint of `https://finnhub.io/api/v1`.
 
 ## Project Structure
 ```
