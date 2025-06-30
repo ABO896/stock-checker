@@ -3,6 +3,7 @@ import requests
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
+import time
 
 load_dotenv()
 
@@ -18,6 +19,24 @@ if not API_KEY:
     )
 
 BASE_URL = os.getenv("FINNHUB_BASE_URL", "https://finnhub.io/api/v1")
+
+# Simple in-memory cache to reduce repeated API calls
+CACHE_TTL = int(os.getenv("CACHE_TTL", "60"))  # seconds
+_cache = {}
+
+
+def cached_get(url, params=None):
+    """Fetch JSON data with basic TTL caching."""
+    key = (url, tuple(sorted((params or {}).items())))
+    now = time.time()
+    entry = _cache.get(key)
+    if entry and now - entry[1] < CACHE_TTL:
+        return entry[0]
+    resp = requests.get(url, params=params, timeout=10)
+    resp.raise_for_status()
+    data = resp.json()
+    _cache[key] = (data, now)
+    return data
 
 
 @app.route("/")
@@ -36,13 +55,10 @@ def search_symbol():
         return jsonify({"error": "No query provided"}), 400
 
     try:
-        search_resp = requests.get(
+        data = cached_get(
             f"{BASE_URL}/search",
             params={"q": query, "token": API_KEY},
-            timeout=10,
         )
-        search_resp.raise_for_status()
-        data = search_resp.json()
         results = []
         for item in data.get("result", [])[:5]:
             results.append(
@@ -61,13 +77,11 @@ def market_status():
     """Return current market status for a given exchange."""
     exchange = request.args.get("exchange", "US")
     try:
-        resp = requests.get(
+        data = cached_get(
             f"{BASE_URL}/stock/market-status",
             params={"exchange": exchange, "token": API_KEY},
-            timeout=10,
         )
-        resp.raise_for_status()
-        return jsonify(resp.json())
+        return jsonify(data)
     except requests.RequestException as err:
         return jsonify({"error": f"Failed to fetch market status: {err}"}), 500
 
@@ -83,50 +97,38 @@ def get_stock_data():
 
     try:
         # Fetch stock quote
-        quote_response = requests.get(
+        quote_data = cached_get(
             f"{BASE_URL}/quote",
             params={"symbol": symbol, "token": API_KEY},
-            timeout=10,
         )
-        quote_response.raise_for_status()  # Raise an error for bad status codes
-        quote_data = quote_response.json()
 
         # Validate quote data
         if "c" not in quote_data or quote_data["c"] == 0:
             return jsonify({"error": "Invalid stock symbol or no data available"}), 404
 
         # Fetch peers data
-        peers_response = requests.get(
+        peers_data = cached_get(
             f"{BASE_URL}/stock/peers",
             params={"symbol": symbol, "token": API_KEY},
-            timeout=10,
         )
-        peers_response.raise_for_status()
-        peers_data = peers_response.json()
 
         # Ensure peers data is a valid list
         if not isinstance(peers_data, list):
             peers_data = []
 
         # Fetch company profile for dynamic company name
-        profile_response = requests.get(
+        profile_data = cached_get(
             f"{BASE_URL}/stock/profile2",
             params={"symbol": symbol, "token": API_KEY},
-            timeout=10,
         )
-        profile_response.raise_for_status()
-        profile_data = profile_response.json()
 
         company_name = profile_data.get("name", f"{symbol.upper()} Inc.")
 
         # Fetch basic financial metrics
-        financials_response = requests.get(
+        financials_json = cached_get(
             f"{BASE_URL}/stock/metric",
             params={"symbol": symbol, "metric": "all", "token": API_KEY},
-            timeout=10,
-        )
-        financials_response.raise_for_status()
-        financials_json = financials_response.json().get("metric", {})
+        ).get("metric", {})
 
         basic_financials = {
             "52WeekHigh": financials_json.get("52WeekHigh"),
