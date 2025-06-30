@@ -71,5 +71,13 @@ stock-checker/
 - Implement user accounts and favorites feature.
 - Optimize API calls with caching.
 
+## Deploying to Vercel
+Vercel requires the `@vercel/python` build step to run this Flask application.
+The included `vercel.json` deploys `app.py` as a serverless function.
+
+When setting up your project on Vercel, add the `FINNHUB_API_KEY` variable
+(and optionally `FINNHUB_BASE_URL`) in the **Environment Variables** section
+of your project settings.
+
 ## License
 This project is licensed under the MIT License.
