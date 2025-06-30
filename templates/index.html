@@ -4,8 +4,7 @@
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Stock Checker</title>
-                <link rel="preconnect" href="https://fonts.gstatic.com" />
-                <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
+                <!-- Using system fonts for a clean, professional look -->
                 <link rel="stylesheet" href="/static/styles.css" />
 	</head>
         <body>
@@ -220,9 +219,15 @@
 
                                         // Display basic financials
                                         if (data.financials) {
+                                                const labelMap = {
+                                                        '52WeekHigh': '52 Week High',
+                                                        '52WeekLow': '52 Week Low',
+                                                        '52WeekPriceReturnDaily': '52 Week Price Return Daily',
+                                                        'beta': 'Beta'
+                                                };
                                                 const entries = Object.entries(data.financials).filter(([,v]) => v !== null && v !== undefined);
                                                 const finHtml = entries
-                                                        .map(([k,v]) => `<li>${k}: ${v}</li>`)
+                                                        .map(([k,v]) => `<li>${labelMap[k] || k}: ${v}</li>`)
                                                         .join('');
                                                 financialsList.innerHTML = finHtml || '<li>No data</li>';
                                                 financialsDiv.style.display = 'block';
@@ -245,7 +250,7 @@
                                 }
                         });
                 </script>
-                <script defer src="https://cdn.speed.vercel.com/sdk/v1/speed-insights.min.js"></script>
+                <script defer src="https://cdn.speed.vercel.com/sdk/v1/speed-insights.min.js" onload="injectSpeedInsights()"></script>
                 </div>
         </body>
 </html>
