@@ -7,7 +7,11 @@
 		<link rel="stylesheet" href="/static/styles.css" />
 	</head>
 	<body>
-		<h1>Stock Checker</h1>
+                <h1>Stock Checker</h1>
+                <div id="market-status" class="sidebar">
+                        <h3>Market Status</h3>
+                        <p id="market-info">Loading...</p>
+                </div>
 		<form id="stock-form">
 			<label for="symbol">Enter Stock Symbol:</label>
                         <input
@@ -27,23 +31,48 @@
 			<p id="current-price"></p>
 			<p id="change"></p>
 		</div>
-		<div id="peers" style="display: none">
-			<h3>Related Companies</h3>
-			<ul id="peers-list"></ul>
-		</div>
-		<div class="error" id="error-message"></div>
+                <div id="peers" style="display: none">
+                        <h3>Related Companies</h3>
+                        <ul id="peers-list"></ul>
+                </div>
+                <div id="financials" style="display: none">
+                        <h3>Basic Financials</h3>
+                        <ul id="financials-list"></ul>
+                </div>
+                <div class="error" id="error-message"></div>
 		<script>
 			const form = document.getElementById('stock-form');
                         const resultDiv = document.getElementById('result');
-                        const peersDiv = document.getElementById('peers');
-                        const peersList = document.getElementById('peers-list');
-                        const stockName = document.getElementById('stock-name');
+        const peersDiv = document.getElementById('peers');
+        const peersList = document.getElementById('peers-list');
+        const financialsDiv = document.getElementById('financials');
+        const financialsList = document.getElementById('financials-list');
+        const marketInfo = document.getElementById('market-info');
+        const stockName = document.getElementById('stock-name');
                         const currentPrice = document.getElementById('current-price');
                         const change = document.getElementById('change');
                         const loadingSpinner = document.getElementById('loading');
                         const errorMessage = document.getElementById('error-message');
-                        const suggestions = document.getElementById('suggestions');
-                        const symbolInput = document.getElementById('symbol');
+        const suggestions = document.getElementById('suggestions');
+        const symbolInput = document.getElementById('symbol');
+
+        async function fetchMarketStatus() {
+                try {
+                        const resp = await fetch('/market-status');
+                        if (!resp.ok) {
+                                marketInfo.textContent = 'Status unavailable';
+                                return;
+                        }
+                        const data = await resp.json();
+                        const status = data.isOpen ? 'Open' : 'Closed';
+                        const session = data.session ? ` (${data.session})` : '';
+                        marketInfo.textContent = `${data.exchange} market is ${status}${session}`;
+                } catch (e) {
+                        marketInfo.textContent = 'Status unavailable';
+                }
+        }
+
+        window.addEventListener('load', fetchMarketStatus);
 
 			async function fetchStockData(symbol) {
 				try {
@@ -77,9 +106,11 @@
                 currentPrice.textContent = '';
                 change.textContent = '';
                 peersList.innerHTML = '';
+                financialsList.innerHTML = '';
                 errorMessage.textContent = '';
                 resultDiv.style.display = 'none';
                 peersDiv.style.display = 'none';
+                financialsDiv.style.display = 'none';
         }
 
                         async function fetchSuggestions(query) {
@@ -152,9 +183,19 @@
                                                 peersList.innerHTML = '<li>No related companies available.</li>';
                                                 peersDiv.style.display = 'block';
                                         }
-				} catch (error) {
-					console.error('Error fetching stock data:', error);
-					displayError(error.message);
+
+                                        // Display basic financials
+                                        if (data.financials) {
+                                                const entries = Object.entries(data.financials).filter(([,v]) => v !== null && v !== undefined);
+                                                const finHtml = entries
+                                                        .map(([k,v]) => `<li>${k}: ${v}</li>`)
+                                                        .join('');
+                                                financialsList.innerHTML = finHtml || '<li>No data</li>';
+                                                financialsDiv.style.display = 'block';
+                                        }
+                                } catch (error) {
+                                        console.error('Error fetching stock data:', error);
+                                        displayError(error.message);
                                 } finally {
                                         loadingSpinner.style.display = 'none';
                                 }

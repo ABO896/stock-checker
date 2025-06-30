@@ -7,8 +7,13 @@ body {
 }
 
 h1 {
-	text-align: center;
-	color: #007bff;
+        text-align: center;
+        color: #007bff;
+}
+
+#market-status {
+        text-align: center;
+        margin-bottom: 20px;
 }
 
 form {
@@ -78,6 +83,23 @@ button:hover {
 
 #peers-list button:hover {
         background-color: #0056b3;
+}
+
+#financials {
+        margin-top: 30px;
+}
+
+#financials h3 {
+        color: #007bff;
+}
+
+#financials-list {
+        list-style: none;
+        padding: 0;
+        text-align: center;
+}
+#financials-list li {
+        margin: 4px 0;
 }
 
 #error-message {

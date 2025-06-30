@@ -56,6 +56,22 @@ def search_symbol():
         return jsonify({"error": f"Failed to fetch suggestions: {err}"}), 500
 
 
+@app.route("/market-status")
+def market_status():
+    """Return current market status for a given exchange."""
+    exchange = request.args.get("exchange", "US")
+    try:
+        resp = requests.get(
+            f"{BASE_URL}/stock/market-status",
+            params={"exchange": exchange, "token": API_KEY},
+            timeout=10,
+        )
+        resp.raise_for_status()
+        return jsonify(resp.json())
+    except requests.RequestException as err:
+        return jsonify({"error": f"Failed to fetch market status: {err}"}), 500
+
+
 @app.route("/stock", methods=["GET"])
 def get_stock_data():
     """
@@ -103,6 +119,22 @@ def get_stock_data():
 
         company_name = profile_data.get("name", f"{symbol.upper()} Inc.")
 
+        # Fetch basic financial metrics
+        financials_response = requests.get(
+            f"{BASE_URL}/stock/metric",
+            params={"symbol": symbol, "metric": "all", "token": API_KEY},
+            timeout=10,
+        )
+        financials_response.raise_for_status()
+        financials_json = financials_response.json().get("metric", {})
+
+        basic_financials = {
+            "52WeekHigh": financials_json.get("52WeekHigh"),
+            "52WeekLow": financials_json.get("52WeekLow"),
+            "52WeekPriceReturnDaily": financials_json.get("52WeekPriceReturnDaily"),
+            "beta": financials_json.get("beta"),
+        }
+
         # Return stock data and peers
         return jsonify(
             {
@@ -112,6 +144,7 @@ def get_stock_data():
                 "change": quote_data["d"],
                 "percent_change": quote_data["dp"],
                 "peers": peers_data,
+                "financials": basic_financials,
             }
         )
     except requests.HTTPError as http_err:
