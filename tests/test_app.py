@@ -33,6 +33,8 @@ def test_get_stock_valid_symbol():
             return create_mock_response(['AAPL', 'GOOGL'])
         elif url.endswith('/stock/profile2'):
             return create_mock_response({'name': 'Test Corp'})
+        elif url.endswith('/stock/metric'):
+            return create_mock_response({'metric': {'52WeekHigh': 200, '52WeekLow': 100}})
         else:
             raise ValueError(f'Unexpected URL {url}')
 
@@ -45,6 +47,7 @@ def test_get_stock_valid_symbol():
     assert data['company_name'] == 'Test Corp'
     assert data['current_price'] == 150.0
     assert data['peers'] == ['AAPL', 'GOOGL']
+    assert data['financials']['52WeekHigh'] == 200
 
 
 def test_get_stock_missing_symbol():
@@ -93,3 +96,20 @@ def test_search_missing_query():
     client = flask_app.test_client()
     response = client.get('/search')
     assert response.status_code == 400
+
+
+def test_market_status():
+    client = flask_app.test_client()
+
+    def mock_get(url, params=None, **kwargs):
+        if url.endswith('/stock/market-status'):
+            return create_mock_response({'exchange': 'US', 'isOpen': True, 'session': 'regular'})
+        else:
+            raise ValueError(f'Unexpected URL {url}')
+
+    with patch('app.requests.get', side_effect=mock_get):
+        response = client.get('/market-status')
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data['isOpen'] is True
