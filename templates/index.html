@@ -97,12 +97,14 @@
 				}
 			}
 
-			function displayError(message) {
-				errorMessage.textContent = message;
-				setTimeout(() => {
-					errorMessage.textContent = '';
-				}, 5000);
-			}
+        function displayError(message) {
+                errorMessage.textContent = message;
+                errorMessage.classList.add('fade-in');
+                setTimeout(() => {
+                        errorMessage.textContent = '';
+                        errorMessage.classList.remove('fade-in');
+                }, 5000);
+        }
 
         function clearPreviousResults() {
                 stockName.textContent = '';
@@ -114,6 +116,9 @@
                 resultDiv.style.display = 'none';
                 peersDiv.style.display = 'none';
                 financialsDiv.style.display = 'none';
+                resultDiv.classList.remove('fade-in');
+                peersDiv.classList.remove('fade-in');
+                financialsDiv.classList.remove('fade-in');
         }
 
                         async function fetchSuggestions(query) {
@@ -166,7 +171,8 @@
 					stockName.textContent = `${data.company_name || symbol} (${symbol})`;
 					currentPrice.textContent = `Current Price: $${data.current_price}`;
 					change.textContent = `Change: $${data.change} (${data.percent_change}%)`;
-					resultDiv.style.display = 'block';
+                                        resultDiv.style.display = 'block';
+                                        resultDiv.classList.add('fade-in');
 
                                         // Display peers data
                                         if (
@@ -182,9 +188,11 @@
                                                         .join('');
                                                 peersList.innerHTML = peersHtml;
                                                 peersDiv.style.display = 'block';
+                                                peersDiv.classList.add('fade-in');
                                         } else {
                                                 peersList.innerHTML = '<li>No related companies available.</li>';
                                                 peersDiv.style.display = 'block';
+                                                peersDiv.classList.add('fade-in');
                                         }
 
                                         // Display basic financials
@@ -195,6 +203,7 @@
                                                         .join('');
                                                 financialsList.innerHTML = finHtml || '<li>No data</li>';
                                                 financialsDiv.style.display = 'block';
+                                                financialsDiv.classList.add('fade-in');
                                         }
                                 } catch (error) {
                                         console.error('Error fetching stock data:', error);
@@ -213,6 +222,7 @@
                                 }
                         });
                 </script>
+                <script defer src="https://cdn.speed.vercel.com/sdk/v1/speed-insights.min.js"></script>
                 </div>
         </body>
 </html>
