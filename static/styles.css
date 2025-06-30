@@ -164,8 +164,53 @@ input:focus {
         box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
+#news {
+        margin-top: 30px;
+        padding: 15px;
+        background: #fafafa;
+        border-radius: 6px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+#earnings {
+        margin-top: 30px;
+        padding: 15px;
+        background: #fafafa;
+        border-radius: 6px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
 #financials h3 {
         color: #005f99;
+}
+
+#news h3 {
+        color: #005f99;
+}
+
+#earnings h3 {
+        color: #005f99;
+}
+
+#earnings-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: center;
+}
+
+#earnings-table th,
+#earnings-table td {
+        padding: 6px;
+        border-bottom: 1px solid #e0e0e0;
+}
+
+#news-list {
+        list-style: none;
+        padding: 0;
+}
+
+#news-list li {
+        margin: 6px 0;
 }
 
 #financials-list {

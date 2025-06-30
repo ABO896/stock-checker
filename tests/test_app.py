@@ -113,3 +113,49 @@ def test_market_status():
     assert response.status_code == 200
     data = response.get_json()
     assert data['isOpen'] is True
+
+
+def test_company_news():
+    client = flask_app.test_client()
+
+    def mock_get(url, params=None, **kwargs):
+        if url.endswith('/company-news'):
+            return create_mock_response([
+                {'headline': 'News 1', 'url': 'http://example.com'}
+            ])
+        else:
+            raise ValueError(f'Unexpected URL {url}')
+
+    with patch('app.requests.get', side_effect=mock_get):
+        response = client.get('/company-news', query_string={
+            'symbol': 'AAPL', 'from': '2025-01-01', 'to': '2025-01-31'
+        })
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data[0]['headline'] == 'News 1'
+
+
+def test_earnings():
+    client = flask_app.test_client()
+
+    def mock_get(url, params=None, **kwargs):
+        if url.endswith('/stock/earnings'):
+            return create_mock_response([
+                {
+                    'symbol': 'AAPL',
+                    'period': '2024-12-31',
+                    'actual': 2.1,
+                    'estimate': 2.0,
+                    'surprise': 0.1,
+                }
+            ])
+        else:
+            raise ValueError(f'Unexpected URL {url}')
+
+    with patch('app.requests.get', side_effect=mock_get):
+        response = client.get('/earnings', query_string={'symbol': 'AAPL', 'limit': '1'})
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data[0]['symbol'] == 'AAPL'
