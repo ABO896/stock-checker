@@ -82,14 +82,14 @@
 				event.preventDefault();
 				const symbol = document.getElementById('symbol').value.trim();
 
-				console.log(`Search submitted for symbol: ${symbol}`);
+                                // console.log(`Search submitted for symbol: ${symbol}`);
 
 				clearPreviousResults();
 				loadingSpinner.style.display = 'block';
 
 				try {
 					const data = await fetchStockData(symbol);
-					console.log('Response data received:', data);
+                                        // console.log('Response data received:', data);
 
 					// Display stock name and current price
 					stockName.textContent = `${data.company_name || symbol} (${symbol})`;
@@ -108,7 +108,7 @@
 							.join('');
 						peersList.innerHTML = peersHtml;
 						peersDiv.style.display = 'block';
-						console.log('Peers list updated:', peersList.innerHTML);
+                                                // console.log('Peers list updated:', peersList.innerHTML);
 					} else {
 						peersList.innerHTML = '<li>No related companies available.</li>';
 						peersDiv.style.display = 'block';
