@@ -1,7 +1,2 @@
 node_modules/
 .env
-
-# Python and macOS artifacts
-.DS_Store
-__pycache__/
-*.pyc
